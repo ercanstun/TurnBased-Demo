@@ -27,6 +27,8 @@ export class BattleComponent {
 
   isGameOver = computed(() => this.gameStatus() !== 'playing');
 
+  skillCooldowns = signal<Record<string, number>>({});
+
   skills = computed<Skill[]>(() => {
     const playerClass = this.playerStats().class;
     switch(playerClass) {
@@ -34,22 +36,22 @@ export class BattleComponent {
         return [
           { name: 'Güçlü Vuruş', icon: '⚔️', color: 'bg-red-700 hover:bg-red-800', type: 'damage', multiplier: 1.5 },
           { name: 'Kalkan Darbesi', icon: '🛡️', color: 'bg-orange-500 hover:bg-orange-600', type: 'damage', multiplier: 1.0 },
-          { name: 'Savaş Narası', icon: '🗣️', color: 'bg-yellow-500 hover:bg-yellow-600', type: 'heal', healAmount: 15 },
-          { name: 'Parçala', icon: '💥', color: 'bg-gray-500 hover:bg-gray-600', type: 'damage', multiplier: 1.2 }
+          { name: 'Savaş Narası', icon: '🗣️', color: 'bg-yellow-500 hover:bg-yellow-600', type: 'heal', healAmount: 15, cooldown: 2 },
+          { name: 'Parçala', icon: '💥', color: 'bg-gray-500 hover:bg-gray-600', type: 'damage', multiplier: 2.0, cooldown: 3 }
         ];
       case 'mage':
         return [
           { name: 'Ateş Topu', icon: '🔥', color: 'bg-red-700 hover:bg-red-800', type: 'damage', multiplier: 1.4 },
           { name: 'Buz Mızrağı', icon: '🧊', color: 'bg-blue-500 hover:bg-blue-600', type: 'damage', multiplier: 1.1 },
-          { name: 'İyileştirme', icon: '💚', color: 'bg-green-600 hover:bg-green-700', type: 'heal', healAmount: 25 },
-          { name: 'Meteor', icon: '☄️', color: 'bg-purple-700 hover:bg-purple-800', type: 'aoe', multiplier: 0.8 }
+          { name: 'İyileştirme', icon: '💚', color: 'bg-green-600 hover:bg-green-700', type: 'heal', healAmount: 25, cooldown: 2 },
+          { name: 'Meteor', icon: '☄️', color: 'bg-purple-700 hover:bg-purple-800', type: 'aoe', multiplier: 1.0, cooldown: 4 }
         ];
       case 'ranger':
          return [
           { name: 'Zehirli Ok', icon: '🏹', color: 'bg-green-700 hover:bg-green-800', type: 'damage', multiplier: 1.3 },
-          { name: 'Çift Atış', icon: '🎯', color: 'bg-teal-500 hover:bg-teal-600', type: 'damage', multiplier: 1.6 },
-          { name: 'Hızlı Canlanma', icon: '🌿', color: 'bg-lime-600 hover:bg-lime-700', type: 'heal', healAmount: 18 },
-          { name: 'Ok Yağmuru', icon: '🌧️', color: 'bg-cyan-700 hover:bg-cyan-800', type: 'aoe', multiplier: 0.6 }
+          { name: 'Çift Atış', icon: '🎯', color: 'bg-teal-500 hover:bg-teal-600', type: 'damage', multiplier: 1.8, cooldown: 2 },
+          { name: 'Hızlı Canlanma', icon: '🌿', color: 'bg-lime-600 hover:bg-lime-700', type: 'heal', healAmount: 18, cooldown: 2 },
+          { name: 'Ok Yağmuru', icon: '🌧️', color: 'bg-cyan-700 hover:bg-cyan-800', type: 'aoe', multiplier: 0.7, cooldown: 3 }
         ];
     }
   });
@@ -74,8 +76,13 @@ export class BattleComponent {
   }
 
   async playerAttack(skill: Skill) {
-    if (!this.isPlayerTurn() || this.isGameOver()) return;
+    if (!this.isPlayerTurn() || this.isGameOver() || (this.skillCooldowns()[skill.name] > 0)) return;
+
     this.isPlayerTurn.set(false);
+
+    if (skill.cooldown && skill.cooldown > 0) {
+      this.skillCooldowns.update(cds => ({...cds, [skill.name]: skill.cooldown! + 1})); // +1 because it's reduced at end of turn
+    }
     
     this.playerAnimation.set('attacking');
     await this.delay(400);
@@ -170,7 +177,21 @@ export class BattleComponent {
       }
       await this.delay(500);
     }
+
+    this.reduceCooldowns();
     this.isPlayerTurn.set(true);
+  }
+
+  private reduceCooldowns() {
+    this.skillCooldowns.update(currentCooldowns => {
+      const newCooldowns: Record<string, number> = {};
+      for (const skillName in currentCooldowns) {
+        if (currentCooldowns[skillName] > 1) {
+          newCooldowns[skillName] = currentCooldowns[skillName] - 1;
+        }
+      }
+      return newCooldowns;
+    });
   }
 
   resetGame() {
@@ -180,6 +201,7 @@ export class BattleComponent {
     this.playerAnimation.set('idle');
     this.playerEffectInfo.set(null);
     this.opponents.set(JSON.parse(JSON.stringify(this.initialOpponents())));
+    this.skillCooldowns.set({});
   }
 
   getHealthBarColor(health: number, maxHealth: number): string {

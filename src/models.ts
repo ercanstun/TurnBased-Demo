@@ -5,6 +5,7 @@ export interface Skill {
   type: 'damage' | 'heal' | 'aoe';
   multiplier?: number;
   healAmount?: number;
+  cooldown?: number;
 }
 
 export interface EffectInfo {

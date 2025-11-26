@@ -109,11 +109,18 @@
 
         <!-- Skills Bar -->
         <div class="relative w-full h-32 bg-black/70 border-t-4 border-indigo-500 rounded-b-xl flex justify-center items-center gap-x-4 p-2">
-            @for(skill of skills; track skill.name) {
-            <button (click)="playerAttack(skill)" [disabled]="!isPlayerTurn() || isGameOver()" class="w-24 h-24 rounded-lg flex flex-col justify-center items-center text-white font-bold transition-all duration-200 transform hover:-translate-y-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none shadow-lg" [class]="skill.color">
-                <span class="text-3xl">{{ skill.icon }}</span>
-                <span class="mt-1 text-sm">{{ skill.name }}</span>
-            </button>
+            @for(skill of skills(); track skill.name) {
+            <div class="relative">
+                <button (click)="playerAttack(skill)" [disabled]="!isPlayerTurn() || isGameOver() || skillCooldowns()[skill.name] > 0" class="w-24 h-24 rounded-lg flex flex-col justify-center items-center text-white font-bold transition-all duration-200 transform hover:-translate-y-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none shadow-lg" [class]="skill.color">
+                    <span class="text-3xl">{{ skill.icon }}</span>
+                    <span class="mt-1 text-sm">{{ skill.name }}</span>
+                </button>
+                @if(skillCooldowns()[skill.name] > 0) {
+                    <div class="absolute inset-0 bg-black/70 flex justify-center items-center font-black text-4xl rounded-lg pointer-events-none">
+                        {{ skillCooldowns()[skill.name] }}
+                    </div>
+                }
+            </div>
             }
         </div>
     </div>
