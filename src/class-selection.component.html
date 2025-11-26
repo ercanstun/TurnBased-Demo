@@ -1,0 +1,26 @@
+<div class="w-full max-w-4xl p-8 text-white font-sans flex flex-col items-center">
+  <h1 class="text-5xl font-black mb-2">SINIFINI SEÇ</h1>
+  <p class="text-lg text-gray-400 mb-10">Maceran başlıyor. Hangi yoldan gideceksin?</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+    @for(classInfo of classes; track classInfo.id) {
+      <div 
+        class="bg-gray-800/50 rounded-2xl border-4 p-6 text-center flex flex-col items-center cursor-pointer transition-all duration-300 hover:bg-gray-700/70"
+        [class.border-yellow-400]="selectedClass() === classInfo.id"
+        [class.border-gray-600]="selectedClass() !== classInfo.id"
+        [class.scale-105]="selectedClass() === classInfo.id"
+        (click)="selectClass(classInfo.id)">
+        <div class="text-6xl mb-4">{{ classInfo.icon }}</div>
+        <h2 class="text-3xl font-bold mb-3">{{ classInfo.name }}</h2>
+        <p class="text-gray-300 flex-grow">{{ classInfo.description }}</p>
+      </div>
+    }
+  </div>
+
+  <button 
+    (click)="confirmSelection()" 
+    [disabled]="!selectedClass()"
+    class="mt-12 px-16 py-4 bg-green-700 text-2xl font-bold rounded-lg transition-colors hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed">
+    Onayla ve Başla
+  </button>
+</div>

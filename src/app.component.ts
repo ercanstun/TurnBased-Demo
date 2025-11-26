@@ -3,31 +3,36 @@ import { CommonModule } from '@angular/common';
 import { BattleComponent } from './battle.component';
 import { ExplorationComponent } from './exploration.component';
 import { InventoryComponent } from './inventory.component';
-import { MapEnemy, Opponent, Position, BattleStartEvent, PlayerStats, BattleRewards, BattleResult, Item, EquippedItems, EquipmentSlot } from './models';
+import { ClassSelectionComponent } from './class-selection.component';
+import { MapEnemy, Opponent, Position, BattleStartEvent, PlayerStats, BattleRewards, BattleResult, Item, EquippedItems, EquipmentSlot, PlayerClass } from './models';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, BattleComponent, ExplorationComponent, InventoryComponent],
+  imports: [CommonModule, BattleComponent, ExplorationComponent, InventoryComponent, ClassSelectionComponent],
 })
 export class AppComponent {
-  scene = signal<'exploration' | 'combat'>('exploration');
+  scene = signal<'classSelection' | 'exploration' | 'combat'>('classSelection');
   isInventoryOpen = signal(false);
   
+  private getInitialStatsByClass(playerClass: PlayerClass): Omit<PlayerStats, 'level' | 'xp' | 'xpToNextLevel' | 'currentHealth' | 'unallocatedStatPoints' | 'skillPoints'> {
+    switch (playerClass) {
+      case 'warrior':
+        return { class: 'warrior', str: 8, vit: 7, int: 3 };
+      case 'mage':
+        return { class: 'mage', str: 3, vit: 5, int: 10 };
+      case 'ranger':
+        return { class: 'ranger', str: 6, vit: 6, int: 6 };
+      default:
+        // This case should not be reached if UI is correct
+        return { class: 'warrior', str: 5, vit: 5, int: 5 };
+    }
+  }
+
   // --- Player State ---
-  playerStats = signal<PlayerStats>({
-    level: 1,
-    xp: 0,
-    xpToNextLevel: 100,
-    currentHealth: 50,
-    str: 5,
-    vit: 5,
-    int: 5,
-    unallocatedStatPoints: 0,
-    skillPoints: 0,
-  });
+  playerStats = signal<PlayerStats | null>(null);
 
   playerInventory = signal<Item[]>([
       { id: 101, name: "Paslı Kılıç", slot: 'weapon', stats: { str: 2 }, icon: '🗡️' },
@@ -37,6 +42,8 @@ export class AppComponent {
 
   effectivePlayerStats = computed(() => {
       const base = this.playerStats();
+      if (!base) return null;
+
       const equipped = this.equippedItems();
       
       let bonusStr = 0;
@@ -85,6 +92,21 @@ export class AppComponent {
   battleRewards = signal<BattleRewards | null>(null);
   private currentBattleEnemyId: number | null = null;
 
+  onClassSelected(playerClass: PlayerClass) {
+    const initialStats = this.getInitialStatsByClass(playerClass);
+    const maxHealth = 10 * initialStats.vit;
+    this.playerStats.set({
+      ...initialStats,
+      level: 1,
+      xp: 0,
+      xpToNextLevel: 100,
+      currentHealth: maxHealth,
+      unallocatedStatPoints: 0,
+      skillPoints: 0,
+    });
+    this.scene.set('exploration');
+  }
+
   onBattleStarted(event: BattleStartEvent) {
     this.currentBattleEnemyId = event.enemy.id;
     this.lastPlayerMapPosition = event.playerPosition;
@@ -107,6 +129,8 @@ export class AppComponent {
   }
 
   onBattleEnded(event: BattleResult) {
+    if (!this.playerStats()) return;
+
     if (event.result === 'victory' && this.battleRewards()) {
       const rewards = this.battleRewards()!;
       this.playerGold.update(g => g + rewards.gold);
@@ -115,6 +139,7 @@ export class AppComponent {
       this.playerMapPosition.set(this.lastPlayerMapPosition);
       
       this.playerStats.update(stats => {
+        if (!stats) return null;
         let updatedStats: PlayerStats = { ...stats, xp: stats.xp + rewards.xp, currentHealth: event.finalPlayerHealth };
         
         if (updatedStats.xp >= updatedStats.xpToNextLevel) {
@@ -129,7 +154,7 @@ export class AppComponent {
             skillPoints: updatedStats.skillPoints + 1,
           };
           
-          const newMaxHealth = 10 * (updatedStats.vit + (this.equippedItems().armor?.stats.vit ?? 0) + (this.equippedItems().helmet?.stats.vit ?? 0));
+          const newMaxHealth = 10 * (this.effectivePlayerStats()?.vit ?? updatedStats.vit);
           updatedStats.currentHealth = newMaxHealth; // Full heal on level up
 
           this.levelUpMessage.set(`SEVİYE ATLADIN! Seviye ${updatedStats.level}!`);
@@ -139,7 +164,11 @@ export class AppComponent {
       });
     } else {
       this.playerMapPosition.set(this.playerStartPosition);
-      this.playerStats.update(stats => ({...stats, currentHealth: Math.max(1, Math.floor(this.effectivePlayerStats().maxHealth / 10)) }));
+      this.playerStats.update(stats => {
+        if (!stats) return null;
+        const effectiveStats = this.effectivePlayerStats();
+        return {...stats, currentHealth: Math.max(1, Math.floor((effectiveStats?.maxHealth ?? stats.vit * 10) / 10)) };
+      });
     }
     this.scene.set('exploration');
     this.currentBattleEnemyId = null;
@@ -186,20 +215,24 @@ export class AppComponent {
 
   onAllocateStats(statsToAllocate: { str: number, vit: number, int: number }) {
       this.playerStats.update(current => {
+          if (!current) return null;
+
           const totalPointsSpent = statsToAllocate.str + statsToAllocate.vit + statsToAllocate.int;
           if (totalPointsSpent > current.unallocatedStatPoints) {
               return current; // Not enough points, do nothing
           }
 
-          const newStats = { ...current };
+          const newStats: PlayerStats = { ...current };
           newStats.str += statsToAllocate.str;
           newStats.vit += statsToAllocate.vit;
           newStats.int += statsToAllocate.int;
           newStats.unallocatedStatPoints -= totalPointsSpent;
 
           // Update current health based on new vitality
-          const oldMaxHealth = 10 * (current.vit + (this.effectivePlayerStats().vit - current.vit));
-          const newMaxHealth = 10 * (newStats.vit + (this.effectivePlayerStats().vit - current.vit));
+          const effective = this.effectivePlayerStats();
+          const bonusVit = (effective?.vit ?? newStats.vit) - current.vit;
+          const oldMaxHealth = 10 * (current.vit + bonusVit);
+          const newMaxHealth = 10 * (newStats.vit + bonusVit);
           const healthIncrease = newMaxHealth - oldMaxHealth;
           newStats.currentHealth = Math.min(newMaxHealth, newStats.currentHealth + healthIncrease);
 

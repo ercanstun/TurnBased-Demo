@@ -60,8 +60,11 @@ export interface BattleStartEvent {
     playerPosition: Position;
 }
 
+export type PlayerClass = 'warrior' | 'mage' | 'ranger';
+
 // Represents the player's BASE stats, without equipment bonuses
 export interface PlayerStats {
+  class: PlayerClass;
   level: number;
   xp: number;
   xpToNextLevel: number;

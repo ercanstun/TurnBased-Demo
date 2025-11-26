@@ -27,12 +27,32 @@ export class BattleComponent {
 
   isGameOver = computed(() => this.gameStatus() !== 'playing');
 
-  skills: Skill[] = [
-    { name: 'Yumruk', icon: '👊', color: 'bg-gray-500 hover:bg-gray-600', type: 'damage', multiplier: 1.0 },
-    { name: 'Tekme', icon: '🦶', color: 'bg-orange-500 hover:bg-orange-600', type: 'damage', multiplier: 1.2 },
-    { name: 'Can Basma', icon: '💚', color: 'bg-green-600 hover:bg-green-700', type: 'heal', healAmount: 20 },
-    { name: 'Ateş Yağmuru', icon: '☄️', color: 'bg-red-700 hover:bg-red-800', type: 'aoe', multiplier: 0.7 }
-  ];
+  skills = computed<Skill[]>(() => {
+    const playerClass = this.playerStats().class;
+    switch(playerClass) {
+      case 'warrior':
+        return [
+          { name: 'Güçlü Vuruş', icon: '⚔️', color: 'bg-red-700 hover:bg-red-800', type: 'damage', multiplier: 1.5 },
+          { name: 'Kalkan Darbesi', icon: '🛡️', color: 'bg-orange-500 hover:bg-orange-600', type: 'damage', multiplier: 1.0 },
+          { name: 'Savaş Narası', icon: '🗣️', color: 'bg-yellow-500 hover:bg-yellow-600', type: 'heal', healAmount: 15 },
+          { name: 'Parçala', icon: '💥', color: 'bg-gray-500 hover:bg-gray-600', type: 'damage', multiplier: 1.2 }
+        ];
+      case 'mage':
+        return [
+          { name: 'Ateş Topu', icon: '🔥', color: 'bg-red-700 hover:bg-red-800', type: 'damage', multiplier: 1.4 },
+          { name: 'Buz Mızrağı', icon: '🧊', color: 'bg-blue-500 hover:bg-blue-600', type: 'damage', multiplier: 1.1 },
+          { name: 'İyileştirme', icon: '💚', color: 'bg-green-600 hover:bg-green-700', type: 'heal', healAmount: 25 },
+          { name: 'Meteor', icon: '☄️', color: 'bg-purple-700 hover:bg-purple-800', type: 'aoe', multiplier: 0.8 }
+        ];
+      case 'ranger':
+         return [
+          { name: 'Zehirli Ok', icon: '🏹', color: 'bg-green-700 hover:bg-green-800', type: 'damage', multiplier: 1.3 },
+          { name: 'Çift Atış', icon: '🎯', color: 'bg-teal-500 hover:bg-teal-600', type: 'damage', multiplier: 1.6 },
+          { name: 'Hızlı Canlanma', icon: '🌿', color: 'bg-lime-600 hover:bg-lime-700', type: 'heal', healAmount: 18 },
+          { name: 'Ok Yağmuru', icon: '🌧️', color: 'bg-cyan-700 hover:bg-cyan-800', type: 'aoe', multiplier: 0.6 }
+        ];
+    }
+  });
   
   constructor() {
     effect(() => {
@@ -61,17 +81,19 @@ export class BattleComponent {
     await this.delay(400);
 
     const stats = this.playerStats();
+    const playerClass = stats.class;
 
     switch (skill.type) {
       case 'heal':
-        const healAmount = (skill.healAmount ?? 20) + stats.int * 2; // Heal scales with INT
+        const healBase = (skill.healAmount ?? 20);
+        const healAmount = healBase + (playerClass === 'mage' ? stats.int * 2 : stats.int); // Mage gets better healing
         this.playerHealth.update(h => Math.min(this.maxHealth(), h + healAmount));
         this.playerEffectInfo.set({ value: healAmount, key: Date.now(), type: 'heal' });
         setTimeout(() => this.playerEffectInfo.set(null), 1000);
         break;
       
       case 'aoe':
-        const aoeBaseDamage = 5 + stats.int; // AoE scales with INT
+        const aoeBaseDamage = playerClass === 'mage' ? 5 + stats.int : 5 + Math.floor(stats.str / 2); // Mage AoE scales with INT
         const aoeDamage = Math.round(aoeBaseDamage * (skill.multiplier ?? 0.7));
         this.opponents.update(opps => opps.map(o => {
           if (o.health > 0) {
@@ -88,7 +110,12 @@ export class BattleComponent {
         const livingOpponents = this.opponents().filter(o => o.health > 0);
         if (livingOpponents.length > 0) {
           const target = livingOpponents[Math.floor(Math.random() * livingOpponents.length)];
-          const baseDamage = 8 + stats.str; // Damage scales with STR
+          
+          let baseDamage = 8;
+          if (playerClass === 'warrior') baseDamage += stats.str;
+          else if (playerClass === 'mage') baseDamage += stats.int;
+          else baseDamage += Math.floor((stats.str + stats.int) / 2); // Ranger uses mix
+
           const damage = Math.round(baseDamage * (skill.multiplier ?? 1));
           
           this.opponents.update(opps => opps.map(o => 

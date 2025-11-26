@@ -1,37 +1,41 @@
 <main class="w-full h-screen overflow-hidden flex justify-center items-center bg-gray-900">
-  <!-- Exploration is always the base layer -->
-  <app-exploration 
-    [isActive]="scene() === 'exploration' && !isInventoryOpen()"
-    [enemies]="mapEnemies()" 
-    [startPosition]="playerMapPosition()"
-    [playerStats]="effectivePlayerStats()"
-    [playerGold]="playerGold()"
-    [levelUpMessage]="levelUpMessage()"
-    (battleStarted)="onBattleStarted($event)" 
-    (inventoryToggled)="toggleInventory()"
-  />
-
-  <!-- Battle Modal -->
-  @if (scene() === 'combat') {
-    <app-battle 
-      [initialOpponents]="battleOpponents()" 
-      [playerStats]="effectivePlayerStats()"
-      [battleRewards]="battleRewards()"
-      (battleEnded)="onBattleEnded($event)" 
+  @if (!playerStats()) {
+    <app-class-selection (classSelected)="onClassSelected($event)"></app-class-selection>
+  } @else {
+    <!-- Exploration is always the base layer -->
+    <app-exploration 
+      [isActive]="scene() === 'exploration' && !isInventoryOpen()"
+      [enemies]="mapEnemies()" 
+      [startPosition]="playerMapPosition()"
+      [playerStats]="effectivePlayerStats()!"
+      [playerGold]="playerGold()"
+      [levelUpMessage]="levelUpMessage()"
+      (battleStarted)="onBattleStarted($event)" 
+      (inventoryToggled)="toggleInventory()"
     />
-  }
 
-  <!-- Inventory Modal -->
-  @if (isInventoryOpen()) {
-    <app-inventory
-      [playerStats]="playerStats()"
-      [effectiveStats]="effectivePlayerStats()"
-      [inventory]="playerInventory()"
-      [equippedItems]="equippedItems()"
-      (equipItem)="onEquipItem($event)"
-      (unequipItem)="onUnequipItem($event)"
-      (allocateStats)="onAllocateStats($event)"
-      (close)="toggleInventory()"
-    ></app-inventory>
+    <!-- Battle Modal -->
+    @if (scene() === 'combat') {
+      <app-battle 
+        [initialOpponents]="battleOpponents()" 
+        [playerStats]="effectivePlayerStats()!"
+        [battleRewards]="battleRewards()"
+        (battleEnded)="onBattleEnded($event)" 
+      />
+    }
+
+    <!-- Inventory Modal -->
+    @if (isInventoryOpen()) {
+      <app-inventory
+        [playerStats]="playerStats()!"
+        [effectiveStats]="effectivePlayerStats()!"
+        [inventory]="playerInventory()"
+        [equippedItems]="equippedItems()"
+        (equipItem)="onEquipItem($event)"
+        (unequipItem)="onUnequipItem($event)"
+        (allocateStats)="onAllocateStats($event)"
+        (close)="toggleInventory()"
+      ></app-inventory>
+    }
   }
 </main>
