@@ -1,0 +1,83 @@
+<div class="relative flex flex-col items-center justify-center w-full h-full font-sans">
+  
+  <!-- Player HUD -->
+  <div class="absolute top-4 left-4 z-10 bg-black/60 p-4 rounded-lg border-2 border-gray-600 shadow-2xl w-80 text-white">
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-bold">Oyuncu</h2>
+        <span class="px-3 py-1 bg-yellow-500 text-black font-bold rounded-full text-lg">Seviye {{ playerStats().level }}</span>
+    </div>
+    <!-- Health Bar -->
+    <div class="mb-2">
+        <div class="flex justify-between text-sm mb-1">
+            <span>CAN</span>
+            <span>{{ playerStats().currentHealth }} / {{ playerStats().maxHealth }}</span>
+        </div>
+        <div class="w-full bg-gray-700 rounded-full h-5 p-0.5">
+            <div class="bg-red-600 h-full rounded-full transition-all duration-300" [style.width.%]="(playerStats().currentHealth / playerStats().maxHealth) * 100"></div>
+        </div>
+    </div>
+    <!-- XP Bar -->
+    <div class="mb-3">
+        <div class="flex justify-between text-sm mb-1">
+            <span>TP</span>
+            <span>{{ playerStats().xp }} / {{ playerStats().xpToNextLevel }}</span>
+        </div>
+        <div class="w-full bg-gray-700 rounded-full h-5 p-0.5">
+            <div class="bg-blue-500 h-full rounded-full transition-all duration-300" [style.width.%]="(playerStats().xp / playerStats().xpToNextLevel) * 100"></div>
+        </div>
+    </div>
+    <!-- Gold & Inventory Button -->
+    <div class="flex items-center justify-between mt-4">
+        <div class="flex items-center">
+            <span class="text-2xl mr-2">💰</span>
+            <span class="text-xl font-bold text-yellow-300">{{ playerGold() }}</span>
+        </div>
+        <button (click)="openInventory()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold border border-gray-500">
+            Envanter
+        </button>
+    </div>
+  </div>
+
+  <!-- Level Up Notification -->
+  @if (levelUpMessage(); as message) {
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-gradient-to-r from-purple-600 to-indigo-600 p-8 rounded-xl shadow-2xl border-4 border-yellow-400">
+        <h1 class="text-5xl font-black text-white text-center animate-pulse drop-shadow-lg">{{ message }}</h1>
+    </div>
+  }
+
+  <div class="relative bg-green-800 w-full h-full overflow-hidden" style="
+    width: 800px; 
+    height: 600px; 
+    margin: auto; 
+    background-image: 
+      linear-gradient(rgba(255,255,255,.05) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(255,255,255,.05) 2px, transparent 2px);
+    background-size: 40px 40px;
+    border: 8px solid #6b4a2d;
+    box-shadow: 0 0 30px rgba(0,0,0,0.7);
+  " (click)="onMapClick($event)">
+
+    <!-- Player Sprite -->
+    <div class="absolute w-10 h-10 flex items-center justify-center transition-all duration-100"
+         [style.left.px]="playerPosition().x"
+         [style.top.px]="playerPosition().y">
+      <div class="w-full h-full rounded-full bg-blue-500 border-2 border-blue-200 shadow-lg"></div>
+    </div>
+
+    <!-- Enemies Sprites -->
+    @for(enemy of enemies(); track enemy.id) {
+      <div class="absolute w-10 h-10 flex items-center justify-center transition-transform duration-200"
+           [style.left.px]="enemy.position.x"
+           [style.top.px]="enemy.position.y"
+           [class.cursor-pointer]="isPlayerCloseTo(enemy)"
+           [class.scale-125]="isPlayerCloseTo(enemy)"
+           (click)="onEnemyClick($event, enemy)">
+        <div class="w-full h-full rounded-full bg-red-700 border-2 border-red-400 shadow-lg"></div>
+      </div>
+    }
+
+  </div>
+  <div class="text-center text-gray-300 font-sans mt-4 text-lg">
+      Click on the map to move. Click on an enemy to engage.
+  </div>
+</div>

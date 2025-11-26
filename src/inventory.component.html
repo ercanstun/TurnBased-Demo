@@ -1,0 +1,122 @@
+<div class="absolute inset-0 bg-black/70 flex justify-center items-center z-30" (click)="close.emit()">
+    <div class="w-[800px] h-[550px] bg-gray-800 rounded-2xl border-4 border-gray-600 shadow-2xl flex text-white font-sans" (click)="$event.stopPropagation()">
+        
+        <!-- Left Panel: Character & Stats -->
+        <div class="w-1/3 bg-gray-900/50 p-6 flex flex-col rounded-l-lg border-r-2 border-gray-600">
+            <h2 class="text-3xl font-bold text-center mb-4">Karakter</h2>
+            
+            <!-- Character Doll -->
+            <div class.bind="w-24 h-24 rounded-full bg-blue-900 border-4 border-blue-400 flex items-center justify-center shadow-2xl mx-auto mb-4">
+                <div class.bind="w-10 h-10 bg-blue-300 rounded-full"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="space-y-2 text-lg flex-grow">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold">Seviye:</span>
+                    <span>{{ playerStats().level }}</span>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-gray-700">
+                    <span class="font-semibold">Can Puanı:</span>
+                    <span>{{ effectiveStats().currentHealth }} / {{ effectiveStats().maxHealth }}</span>
+                </div>
+
+                <!-- Stat Allocation -->
+                @if(playerStats().unallocatedStatPoints > 0) {
+                    <div class="py-3 my-2 bg-yellow-900/30 rounded-lg text-center">
+                        <p class="font-bold text-yellow-300">Dağıtılacak Puanlar: {{ remainingPoints() }}</p>
+                    </div>
+                }
+
+                <!-- STR -->
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-red-400">Güç (STR):</span>
+                    <div class="flex items-center gap-2">
+                        @if(playerStats().unallocatedStatPoints > 0) {
+                        <button (click)="decreaseStat('str')" [disabled]="tempStr() === 0" class="w-6 h-6 bg-gray-600 rounded disabled:opacity-30">-</button>
+                        }
+                        <span>{{ playerStats().str + tempStr() }} <span class="text-green-400 text-sm">(+{{ getBonusStat('str') }})</span></span>
+                        @if(playerStats().unallocatedStatPoints > 0) {
+                        <button (click)="increaseStat('str')" [disabled]="remainingPoints() === 0" class="w-6 h-6 bg-gray-600 rounded disabled:opacity-30">+</button>
+                        }
+                    </div>
+                </div>
+                 <!-- VIT -->
+                 <div class="flex justify-between items-center">
+                    <span class="font-semibold text-green-400">Canlılık (VIT):</span>
+                     <div class="flex items-center gap-2">
+                        @if(playerStats().unallocatedStatPoints > 0) {
+                        <button (click)="decreaseStat('vit')" [disabled]="tempVit() === 0" class="w-6 h-6 bg-gray-600 rounded disabled:opacity-30">-</button>
+                        }
+                        <span>{{ playerStats().vit + tempVit() }} <span class="text-green-400 text-sm">(+{{ getBonusStat('vit') }})</span></span>
+                        @if(playerStats().unallocatedStatPoints > 0) {
+                        <button (click)="increaseStat('vit')" [disabled]="remainingPoints() === 0" class="w-6 h-6 bg-gray-600 rounded disabled:opacity-30">+</button>
+                        }
+                    </div>
+                </div>
+                 <!-- INT -->
+                 <div class="flex justify-between items-center">
+                    <span class="font-semibold text-blue-400">Zeka (INT):</span>
+                    <div class="flex items-center gap-2">
+                        @if(playerStats().unallocatedStatPoints > 0) {
+                        <button (click)="decreaseStat('int')" [disabled]="tempInt() === 0" class="w-6 h-6 bg-gray-600 rounded disabled:opacity-30">-</button>
+                        }
+                        <span>{{ playerStats().int + tempInt() }} <span class="text-green-400 text-sm">(+{{ getBonusStat('int') }})</span></span>
+                        @if(playerStats().unallocatedStatPoints > 0) {
+                        <button (click)="increaseStat('int')" [disabled]="remainingPoints() === 0" class="w-6 h-6 bg-gray-600 rounded disabled:opacity-30">+</button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if(playerStats().unallocatedStatPoints > 0) {
+                <button (click)="confirmAllocation()" [disabled]="!hasPendingChanges()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold mb-2 disabled:bg-gray-500 disabled:cursor-not-allowed">
+                    Onayla
+                </button>
+            }
+            
+            <button (click)="close.emit()" class="w-full py-2 bg-red-700 hover:bg-red-600 rounded-lg font-bold">
+                Kapat
+            </button>
+        </div>
+
+        <!-- Right Panel: Equipment & Inventory -->
+        <div class="w-2/3 p-6 flex flex-col">
+            <!-- Equipment -->
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold mb-4">Ekipman</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    @for(slot of equipmentSlots; track slot) {
+                        <div class="h-24 bg-gray-900/70 rounded-lg border-2 border-gray-700 flex flex-col items-center justify-center p-2">
+                            <span class="text-sm capitalize text-gray-400">{{ slot }}</span>
+                             @if (equippedItems()[slot]; as item) {
+                                <div (click)="unequipItem.emit(slot)" class="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
+                                    <span class="text-3xl">{{ item.icon }}</span>
+                                    <span class="text-xs text-center group-hover:text-red-400">{{ item.name }}</span>
+                                </div>
+                            } @else {
+                                <span class="text-gray-500">Boş</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Inventory -->
+            <div class="flex-grow">
+                 <h3 class="text-2xl font-bold mb-4">Envanter</h3>
+                 <div class="h-full max-h-[260px] bg-gray-900/70 rounded-lg border-2 border-gray-700 p-4 overflow-y-auto grid grid-cols-5 gap-4">
+                    @for(item of inventory(); track item.id) {
+                        <div (click)="equipItem.emit(item)" class="w-20 h-20 bg-gray-700 rounded-lg flex flex-col items-center justify-center p-1 cursor-pointer hover:bg-gray-600 hover:border-yellow-400 border-2 border-transparent transition-colors">
+                            <span class="text-3xl">{{ item.icon }}</span>
+                            <span class="text-xs text-center leading-tight">{{ item.name }}</span>
+                        </div>
+                    }
+                    @if(inventory().length === 0) {
+                        <p class="col-span-5 text-center text-gray-500 mt-8">Envanterin boş.</p>
+                    }
+                 </div>
+            </div>
+        </div>
+    </div>
+</div>

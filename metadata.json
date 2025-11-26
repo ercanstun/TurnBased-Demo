@@ -1,0 +1,5 @@
+{
+  "name": "Turn-Based Battle",
+  "description": "A prototype of a turn-based fighting game where two characters take turns attacking each other. Use skills to increase your damage and defeat your opponent before they defeat you.",
+  "requestFramePermissions": []
+}

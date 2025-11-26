@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Turn-Based Battle</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes player-attack-animation {
+      50% { transform: translateX(200px) scale(1.1); }
+    }
+    .animate-player-attack {
+      animation: player-attack-animation 0.8s ease-in-out;
+    }
+
+    @keyframes opponent-attack-animation {
+      50% { transform: translateX(-200px) scale(1.1); }
+    }
+    .animate-opponent-attack {
+      animation: opponent-attack-animation 0.8s ease-in-out;
+    }
+
+    @keyframes hit-animation {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px) rotate(-2deg); }
+      40% { transform: translateX(8px) rotate(2deg); }
+      60% { transform: translateX(-8px) rotate(-2deg); }
+      80% { transform: translateX(8px) rotate(2deg); }
+    }
+    .animate-hit {
+      animation: hit-animation 0.4s ease-in-out;
+    }
+
+    @keyframes damage-popup-animation {
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(-60px); opacity: 0; }
+    }
+    .animate-damage-popup {
+        animation: damage-popup-animation 1s ease-out forwards;
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "rxjs": "https://aistudiocdn.com/rxjs@^7.8.2?conditions=es2015",
+    "rxjs/operators": "https://aistudiocdn.com/rxjs@^7.8.2/operators?conditions=es2015",
+    "rxjs/ajax": "https://aistudiocdn.com/rxjs@^7.8.2/ajax?conditions=es2015",
+    "rxjs/webSocket": "https://aistudiocdn.com/rxjs@^7.8.2/webSocket?conditions=es2015",
+    "rxjs/testing": "https://aistudiocdn.com/rxjs@^7.8.2/testing?conditions=es2015",
+    "rxjs/fetch": "https://aistudiocdn.com/rxjs@^7.8.2/fetch?conditions=es2015",
+    "@angular/core": "https://next.esm.sh/@angular/core@^21.0.0?external=rxjs",
+    "@angular/compiler": "https://next.esm.sh/@angular/compiler@^21.0.0?external=rxjs",
+    "@angular/platform-browser": "https://next.esm.sh/@angular/platform-browser@^21.0.0?external=rxjs",
+    "@angular/common": "https://next.esm.sh/@angular/common@^21.0.0?external=rxjs"
+  }
+}
+</script>
+</head>
+<body class="bg-gray-800">
+  <app-root></app-root>
+</body>
+</html>
