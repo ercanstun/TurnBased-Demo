@@ -97,7 +97,7 @@ export class AppComponent {
       position: { x: 600, y: 200 },
       opponentCount: 1,
       isBoss: true, // <<< boss
-      loot: [{ id: 103, name: "Mysterious Epic Weapon", slot: 'weapon', stats: { str: 4 }, icon: '🗡️', rarity: 'epic' }]
+      loot: []
     }
   ]);
 
@@ -122,11 +122,14 @@ export class AppComponent {
   }
 
   onBattleStarted(event: BattleStartEvent) {
+    this.lastPlayerMapPosition = event.playerPosition;
+    this.currentBattleEnemyId = event.enemy.id;
+
     // Haritadaki enemy kaydını bul
     const enemy = this.mapEnemies().find(e => e.id === event.enemy.id);
     this.currentEnemy.set(enemy ?? null);
 
-    // Opponent listesini hazırla (sende zaten buna benzer bir kısım var)
+    // Opponent listesini hazırla
     const opponents: Opponent[] = Array.from(
       { length: event.enemy.opponentCount ?? 1 }
     ).map((_, index) => {
@@ -135,18 +138,14 @@ export class AppComponent {
 
       return {
         id: event.enemy.id * 10 + index,
-
-        name: index === 0 ? event.enemy.name : `${event.enemy.name} Minion`,
-
+        name: isBoss ? event.enemy.name : `${event.enemy.name} Minion`,
         maxHealth: maxHp,
         health: maxHp,
         animation: 'idle',
-        effectInfo: [],
+        effectInfo: null,
         isBoss
       };
     });
-
-
 
     this.battleOpponents.set(opponents);
 
@@ -159,11 +158,10 @@ export class AppComponent {
 
     // Boss ise class'a göre EPIC silah ekle
     const isBossFight = enemy?.isBoss === true;
-
     let bossLoot: Item[] = [];
 
     if (isBossFight) {
-      const playerClass: 'warrior' | 'mage' | 'ranger' = 'warrior'; // TODO: ileride class seçme ekranından gelsin
+      const playerClass = this.playerStats()?.class;
 
       let epicWeapon: Item;
 
@@ -174,7 +172,7 @@ export class AppComponent {
           slot: 'weapon',
           rarity: 'epic',
           icon: '🗡️' ,
-          stats: { str: 3, vit: 1 },
+          stats: { str: 10, vit: 5 },
         };
       } else if (playerClass === 'mage') {
         epicWeapon = {
@@ -182,20 +180,19 @@ export class AppComponent {
           name: 'Staff of Fallen Stars',
           slot: 'weapon',
           rarity: 'epic',
-          icon: '🗡️' ,
-          stats: { int: 4 },
+          icon: '🪄' ,
+          stats: { int: 12 },
         };
-      } else {
+      } else { // Ranger
         epicWeapon = {
           id: 106,
           name: 'Eaglefang Longbow',
           slot: 'weapon',
           rarity: 'epic',
-          icon: '🗡️' ,
-          stats: { str: 4 },
+          icon: '🏹' ,
+          stats: { str: 8, int: 4 },
         };
       }
-
       bossLoot = [epicWeapon];
     }
 
@@ -210,17 +207,22 @@ export class AppComponent {
 
 
   onBattleEnded(event: BattleResult) {
-    const enemy = this.currentEnemy();
     if (!this.playerStats()) return;
 
     if (event.result === 'victory' && this.battleRewards()) {
-      const defeatedId = enemy.id;
+      const defeatedId = this.currentBattleEnemyId;
       const rewards = this.battleRewards()!;
+      
       this.playerGold.update(g => g + rewards.gold);
       this.playerInventory.update(inv => [...inv, ...rewards.loot]);
-      this.mapEnemies.update(enemies => enemies.filter(e => e.id !== defeatedId));
+      
+      if (defeatedId !== null) {
+          this.mapEnemies.update(enemies => enemies.filter(e => e.id !== defeatedId));
+      }
+
       this.playerMapPosition.set(this.lastPlayerMapPosition);
       this.currentEnemy.set(null);
+
       this.playerStats.update(stats => {
         if (!stats) return null;
         let updatedStats: PlayerStats = { ...stats, xp: stats.xp + rewards.xp, currentHealth: event.finalPlayerHealth };
@@ -313,9 +315,12 @@ export class AppComponent {
 
           // Update current health based on new vitality
           const effective = this.effectivePlayerStats();
-          const bonusVit = (effective?.vit ?? newStats.vit) - current.vit;
-          const oldMaxHealth = 10 * (current.vit + bonusVit);
+          const oldBaseVit = current.vit;
+          const bonusVit = (effective?.vit ?? oldBaseVit) - oldBaseVit;
+          
+          const oldMaxHealth = 10 * (oldBaseVit + bonusVit);
           const newMaxHealth = 10 * (newStats.vit + bonusVit);
+          
           const healthIncrease = newMaxHealth - oldMaxHealth;
           newStats.currentHealth = Math.min(newMaxHealth, newStats.currentHealth + healthIncrease);
 

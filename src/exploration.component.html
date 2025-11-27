@@ -67,15 +67,19 @@
     <!-- Enemies Sprites -->
     @for (enemy of enemies(); track enemy.id) {
       <div
+        (click)="onEnemyClick($event, enemy)"
+        [class.cursor-pointer]="isPlayerCloseTo(enemy)"
         class="absolute flex items-center justify-center rounded-full transition-transform duration-300"
+        [class.transform]="isPlayerCloseTo(enemy)"
+        [class.scale-125]="isPlayerCloseTo(enemy)"
         [ngClass]="enemy.isBoss
           ? 'w-14 h-14 bg-gradient-to-br from-red-600 via-purple-600 to-yellow-500 border-4 border-red-300 animate-pulse'
           : 'w-8 h-8 bg-red-500 border-2 border-red-300'
         "
-        [style.left.px]="enemy.position.x * tileSize"
-        [style.top.px]="enemy.position.y * tileSize"
+        [style.left.px]="enemy.position.x"
+        [style.top.px]="enemy.position.y"
       >
-        <span class="text-xs font-bold text-white drop-shadow-sm">
+        <span class="text-xs font-bold text-white drop-shadow-sm pointer-events-none">
           {{ enemy.isBoss ? 'B' : 'E' }}
         </span>
       </div>
