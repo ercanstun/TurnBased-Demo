@@ -2,31 +2,53 @@
   @if (!playerStats()) {
     <app-class-selection (classSelected)="onClassSelected($event)"></app-class-selection>
   } @else {
-    <!-- Exploration is always the base layer -->
-    <app-exploration 
-      [isActive]="scene() === 'exploration' && !isInventoryOpen()"
-      [enemies]="mapEnemies()" 
-      [startPosition]="playerMapPosition()"
-      [playerStats]="effectivePlayerStats()!"
-      [playerGold]="playerGold()"
-      [levelUpMessage]="levelUpMessage()"
-      (battleStarted)="onBattleStarted($event)" 
-      (inventoryToggled)="toggleInventory()"
-    />
-
-    <!-- Battle Modal -->
-    @if (scene() === 'combat') {
-      <app-battle
-        *ngIf="scene() === 'combat'"
-        [initialOpponents]="battleOpponents()"
-        [playerStats]="effectivePlayerStats()"
-        [battleRewards]="battleRewards()"
-        [isBossFight]="currentEnemy()?.isBoss === true"
-        (battleEnded)="onBattleEnded($event)">
-      </app-battle>
+    <!-- Scene Manager -->
+    @switch (scene()) {
+      @case ('exploration') {
+        <app-exploration 
+          [isActive]="!isInventoryOpen() && !isDungeonSelectionOpen()"
+          [enemies]="mapEnemies()" 
+          [interactiveObjects]="mapInteractiveObjects()"
+          [startPosition]="playerMapPosition()"
+          [playerStats]="effectivePlayerStats()!"
+          [playerGold]="playerGold()"
+          [levelUpMessage]="levelUpMessage()"
+          (battleStarted)="onBattleStarted($event)" 
+          (inventoryToggled)="toggleInventory()"
+          (objectInteracted)="onObjectInteracted($event)"
+        />
+      }
+      @case ('combat') {
+        <app-battle
+          [initialOpponents]="battleOpponents()"
+          [playerStats]="effectivePlayerStats()!"
+          [battleRewards]="battleRewards()"
+          [isBossFight]="currentEnemy()?.isBoss === true"
+          [shrineBuff]="playerStats()?.shrineBuff"
+          (battleEnded)="onBattleEnded($event)">
+        </app-battle>
+      }
+      @case ('castle') {
+        <app-castle
+          [playerStats]="playerStats()!"
+          [effectivePlayerStats]="effectivePlayerStats()!"
+          [playerGold]="playerGold()"
+          (openDungeonSelection)="onOpenDungeonSelection()"
+          (openInventory)="toggleInventory()"
+        ></app-castle>
+      }
+    }
+    
+    <!-- Global Modals -->
+    @if (isDungeonSelectionOpen()) {
+      <app-dungeon-selection
+        [clearedFloor]="playerStats()!.clearedDungeonFloor"
+        [stamina]="playerStats()!.stamina"
+        (floorSelected)="onFloorSelected($event)"
+        (close)="isDungeonSelectionOpen.set(false)"
+      ></app-dungeon-selection>
     }
 
-    <!-- Inventory Modal -->
     @if (isInventoryOpen()) {
       <app-inventory
         [playerStats]="playerStats()!"

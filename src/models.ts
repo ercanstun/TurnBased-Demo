@@ -16,6 +16,7 @@ export interface EffectInfo {
 
 export interface Opponent {
   id: number;
+  name: string;
   health: number;
   maxHealth: number;
   animation: AnimationState;
@@ -68,6 +69,12 @@ export interface BattleStartEvent {
 
 export type PlayerClass = 'warrior' | 'mage' | 'ranger';
 
+export interface ShrineBuff {
+    type: 'damage' | 'defense';
+    multiplier: number;
+    duration: number; // in number of fights
+}
+
 // Represents the player's BASE stats, without equipment bonuses
 export interface PlayerStats {
   class: PlayerClass;
@@ -80,6 +87,12 @@ export interface PlayerStats {
   int: number; // Intelligence: affects magic damage and healing
   unallocatedStatPoints: number;
   skillPoints: number;
+  // New properties for dungeon system
+  clearedDungeonFloor: number;
+  stamina: number;
+  maxStamina: number;
+  lastStaminaUpdateTime: number; // timestamp
+  shrineBuff: ShrineBuff | null;
 }
 
 export interface BattleRewards {
@@ -96,3 +109,10 @@ export interface BattleResult {
 export type EquippedItems = {
   [key in EquipmentSlot]?: Item;
 };
+
+export interface InteractiveObject {
+    id: number;
+    type: 'chest' | 'shrine';
+    position: Position;
+    isOpened: boolean;
+}

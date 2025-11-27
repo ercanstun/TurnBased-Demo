@@ -1,0 +1,57 @@
+<div class="absolute inset-0 bg-black/70 flex justify-center items-center z-30" (click)="close.emit()">
+    <div class="w-[600px] h-[500px] bg-gray-800 rounded-2xl border-4 border-gray-600 shadow-2xl flex flex-col text-white font-sans" (click)="$event.stopPropagation()">
+        
+        <header class="p-4 border-b-2 border-gray-600 text-center">
+            <h2 class="text-3xl font-bold">Zindan Katları</h2>
+            <p class="text-gray-400">Bir sonraki mücadeleni seç.</p>
+        </header>
+
+        <main class="flex-grow p-4 overflow-y-auto">
+            <div class="space-y-3">
+                @for (floor of floors; track floor.number) {
+                    <div class="p-4 rounded-lg flex items-center justify-between"
+                        [ngClass]="{
+                            'bg-gray-700': floor.isUnlocked,
+                            'bg-gray-900/50 text-gray-500': !floor.isUnlocked
+                        }">
+                        <div class="flex items-center">
+                            @if (floor.isCleared) {
+                                <span class="text-2xl text-green-400 mr-4">✓</span>
+                            } @else if (!floor.isUnlocked) {
+                                <span class="text-2xl text-red-500 mr-4">🔒</span>
+                            } @else {
+                                <span class="text-2xl text-yellow-400 mr-4">⚔️</span>
+                            }
+                            <div>
+                                <h3 class="text-xl font-bold" [class.text-gray-200]="floor.isUnlocked">
+                                    Kat {{ floor.number }}
+                                </h3>
+                                @if (floor.isUnlocked) {
+                                    <p class="text-sm text-gray-400">Enerji Maliyeti: {{ floor.cost }}</p>
+                                } @else {
+                                    <p class="text-sm">Kilitli</p>
+                                }
+                            </div>
+                        </div>
+                        <button 
+                            (click)="selectFloor(floor)"
+                            [disabled]="!floor.canEnter"
+                            class="px-6 py-2 rounded-lg font-bold transition-colors"
+                            [ngClass]="{
+                                'bg-green-700 hover:bg-green-600': floor.canEnter,
+                                'bg-gray-600 cursor-not-allowed opacity-50': !floor.canEnter
+                            }">
+                            Giriş Yap
+                        </button>
+                    </div>
+                }
+            </div>
+        </main>
+
+        <footer class="p-4 border-t-2 border-gray-600 flex justify-end">
+            <button (click)="close.emit()" class="px-6 py-2 bg-red-700 hover:bg-red-600 rounded-lg font-bold">
+                Kapat
+            </button>
+        </footer>
+    </div>
+</div>

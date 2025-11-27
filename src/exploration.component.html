@@ -26,6 +26,16 @@
             <div class="bg-blue-500 h-full rounded-full transition-all duration-300" [style.width.%]="(playerStats().xp / playerStats().xpToNextLevel) * 100"></div>
         </div>
     </div>
+    <!-- Stamina Bar -->
+    <div class="mb-3">
+        <div class="flex justify-between text-sm mb-1">
+            <span>ENERJİ ⚡</span>
+            <span>{{ playerStats().stamina }} / {{ playerStats().maxStamina }}</span>
+        </div>
+        <div class="w-full bg-gray-700 rounded-full h-5 p-0.5">
+            <div class="bg-yellow-500 h-full rounded-full transition-all duration-300" [style.width.%]="(playerStats().stamina / playerStats().maxStamina) * 100"></div>
+        </div>
+    </div>
     <!-- Gold & Inventory Button -->
     <div class="flex items-center justify-between mt-4">
         <div class="flex items-center">
@@ -56,6 +66,25 @@
     border: 8px solid #6b4a2d;
     box-shadow: 0 0 30px rgba(0,0,0,0.7);
   " (click)="onMapClick($event)">
+
+    <!-- Interactive Objects -->
+    @for (object of interactiveObjects(); track object.id) {
+      <div
+        (click)="onObjectClick($event, object)"
+        class="absolute w-10 h-10 flex items-center justify-center text-4xl transition-transform duration-300"
+        [class.cursor-pointer]="isPlayerCloseTo(object) && !object.isOpened"
+        [class.grayscale]="object.isOpened"
+        [class.scale-125]="isPlayerCloseTo(object) && !object.isOpened"
+        [style.left.px]="object.position.x"
+        [style.top.px]="object.position.y"
+      >
+        @if (object.type === 'chest') {
+          <span>🎁</span>
+        } @else if (object.type === 'shrine') {
+          <span>✨</span>
+        }
+      </div>
+    }
 
     <!-- Player Sprite -->
     <div class="absolute w-10 h-10 flex items-center justify-center transition-all duration-100"

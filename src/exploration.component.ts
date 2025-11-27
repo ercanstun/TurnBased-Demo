@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, OnDestroy, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MapEnemy, Position, BattleStartEvent, PlayerStats } from './models';
+import { MapEnemy, Position, BattleStartEvent, PlayerStats, InteractiveObject } from './models';
 
 const PLAYER_SPEED = 2.5;
 const ENEMY_SPEED = 1.5;
@@ -20,6 +20,7 @@ const ENGAGE_DISTANCE = TILE_SIZE * 1.5;
 })
 export class ExplorationComponent implements OnDestroy {
   enemies = input.required<MapEnemy[]>();
+  interactiveObjects = input.required<InteractiveObject[]>();
   startPosition = input.required<Position>();
   playerStats = input.required<PlayerStats & {maxHealth: number}>();
   playerGold = input.required<number>();
@@ -28,6 +29,7 @@ export class ExplorationComponent implements OnDestroy {
 
   battleStarted = output<BattleStartEvent>();
   inventoryToggled = output<void>();
+  objectInteracted = output<InteractiveObject>();
 
   playerPosition = signal<Position>({ x: 0, y: 0 });
   private targetPosition = signal<Position | null>(null);
@@ -76,10 +78,20 @@ export class ExplorationComponent implements OnDestroy {
     this.tryEngageEnemy(enemy);
   }
 
-  isPlayerCloseTo(enemy: MapEnemy): boolean {
+  onObjectClick(event: MouseEvent, object: InteractiveObject) {
+      if (!this.isActive() || object.isOpened) return;
+      event.stopPropagation();
+      if (this.isPlayerCloseTo(object)) {
+        this.objectInteracted.emit(object);
+      } else {
+        this.targetPosition.set({x: object.position.x, y: object.position.y});
+      }
+  }
+
+  isPlayerCloseTo(target: { position: Position }): boolean {
     const playerPos = this.playerPosition();
-    const dx = playerPos.x - enemy.position.x;
-    const dy = playerPos.y - enemy.position.y;
+    const dx = playerPos.x - target.position.x;
+    const dy = playerPos.y - target.position.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     return distance < ENGAGE_DISTANCE;
   }

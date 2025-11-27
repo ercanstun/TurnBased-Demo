@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, signal, computed, input, output, effect, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Skill, Opponent, GameStatus, AnimationState, EffectInfo, PlayerStats, BattleRewards, BattleResult } from './models';
+import { Skill, Opponent, GameStatus, AnimationState, EffectInfo, PlayerStats, BattleRewards, BattleResult, ShrineBuff } from './models';
 
 @Component({
   selector: 'app-battle',
@@ -16,6 +16,8 @@ export class BattleComponent {
   initialOpponents = input.required<Opponent[]>();
   playerStats = input.required<PlayerStats & {maxHealth: number}>(); // Now receives effective stats
   battleRewards = input.required<BattleRewards | null>();
+  shrineBuff = input<ShrineBuff | null>();
+
   battleEnded = output<BattleResult>();
 
   maxHealth = computed(() => this.playerStats().maxHealth);
@@ -98,6 +100,7 @@ export class BattleComponent {
 
     const stats = this.playerStats();
     const playerClass = stats.class;
+    const buff = this.shrineBuff();
 
     switch (skill.type) {
       case 'heal':
@@ -109,7 +112,8 @@ export class BattleComponent {
         break;
       
       case 'aoe':
-        const aoeBaseDamage = playerClass === 'mage' ? 5 + stats.int : 5 + Math.floor(stats.str / 2); // Mage AoE scales with INT
+        let aoeBaseDamage = playerClass === 'mage' ? 5 + stats.int : 5 + Math.floor(stats.str / 2); // Mage AoE scales with INT
+        if (buff?.type === 'damage') aoeBaseDamage *= buff.multiplier;
         const aoeDamage = Math.round(aoeBaseDamage * (skill.multiplier ?? 0.7));
         this.opponents.update(opps => opps.map(o => {
           if (o.health > 0) {
@@ -131,6 +135,8 @@ export class BattleComponent {
           if (playerClass === 'warrior') baseDamage += stats.str;
           else if (playerClass === 'mage') baseDamage += stats.int;
           else baseDamage += Math.floor((stats.str + stats.int) / 2); // Ranger uses mix
+          
+          if (buff?.type === 'damage') baseDamage *= buff.multiplier;
 
           const damage = Math.round(baseDamage * (skill.multiplier ?? 1));
           
@@ -166,7 +172,10 @@ export class BattleComponent {
       this.opponents.update(opps => opps.map(o => o.id === opponent.id ? { ...o, animation: 'attacking' } : o));
       await this.delay(400);
 
-      const defense = Math.floor(this.playerStats().vit / 2);
+      let defense = Math.floor(this.playerStats().vit / 2);
+      const buff = this.shrineBuff();
+      if(buff?.type === 'defense') defense *= buff.multiplier;
+
       const baseDamage = Math.floor(Math.random() * 5) + 6; // Base enemy damage
       const damage = Math.max(1, baseDamage - defense); // Damage reduction from VIT
       
