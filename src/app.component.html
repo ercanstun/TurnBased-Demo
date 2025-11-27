@@ -16,12 +16,14 @@
 
     <!-- Battle Modal -->
     @if (scene() === 'combat') {
-      <app-battle 
-        [initialOpponents]="battleOpponents()" 
-        [playerStats]="effectivePlayerStats()!"
+      <app-battle
+        *ngIf="scene() === 'combat'"
+        [initialOpponents]="battleOpponents()"
+        [playerStats]="effectivePlayerStats()"
         [battleRewards]="battleRewards()"
-        (battleEnded)="onBattleEnded($event)" 
-      />
+        [isBossFight]="currentEnemy()?.isBoss === true"
+        (battleEnded)="onBattleEnded($event)">
+      </app-battle>
     }
 
     <!-- Inventory Modal -->

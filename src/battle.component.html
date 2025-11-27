@@ -1,127 +1,258 @@
 <!-- Battle Modal Container -->
 <div class="absolute inset-0 bg-black/70 flex justify-center items-center z-20">
-    <div class="relative w-[900px] h-[600px] overflow-hidden bg-cover bg-center flex flex-col justify-between p-4 text-white font-sans rounded-2xl border-4 border-gray-600 shadow-2xl" style="background-image: url('https://picsum.photos/seed/battleground/1000/700');">
-        <div class="absolute inset-0 bg-black/50"></div>
+  <div
+    class="relative w-[900px] h-[600px] overflow-hidden bg-cover bg-center flex flex-col justify-between p-4 text-white font-sans rounded-2xl border-4 border-gray-600 shadow-2xl"
+    style="background-image: url('https://picsum.photos/seed/battleground/1000/700');"
+  >
+    <div class="absolute inset-0 bg-black/50"></div>
 
-        <!-- Game Over Modal -->
-        @if (isGameOver()) {
-        <div class="absolute inset-0 bg-black/80 flex flex-col justify-center items-center z-50 rounded-lg">
-            @if (gameStatus() === 'victory') {
-            <div class="text-center">
-                <h1 class="text-8xl font-black text-yellow-400 drop-shadow-[0_5px_5px_rgba(250,204,21,0.5)] animate-pulse">
-                    ZAFER
-                </h1>
-                @if(battleRewards(); as rewards) {
-                <div class="mt-8 text-2xl space-y-2">
-                    <p>Tecrübe Puanı: <span class="font-bold text-blue-400">{{ rewards.xp }}</span></p>
-                    <p>Altın: <span class="font-bold text-yellow-400">{{ rewards.gold }}</span></p>
-                    @if(rewards.loot.length > 0) {
-                        <p>Ganimet: 
-                            @for(item of rewards.loot; track item.id) {
-                                <span class="font-bold text-purple-400">{{ item.icon }}{{ item.name }}</span>
-                            }
-                        </p>
-                    }
-                </div>
-                }
-            </div>
-            } @else {
-            <h1 class="text-8xl font-black text-red-600 drop-shadow-[0_5px_5px_rgba(220,38,38,0.5)]">
-                MAĞLUBİYET
+    <!-- Game Over Modal -->
+    @if (isGameOver()) {
+      <div class="absolute inset-0 bg-black/80 flex flex-col justify-center items-center z-50 rounded-lg">
+        @if (gameStatus() === 'victory') {
+          <div class="text-center">
+            <h1
+              class="text-8xl font-black text-yellow-400 drop-shadow-[0_5px_5px_rgba(250,204,21,0.5)] animate-pulse"
+            >
+              ZAFER
             </h1>
-            }
-            <p class="mt-4 text-xl text-gray-300">Haritaya dönülüyor...</p>
-        </div>
-        }
-
-        <!-- Turn Indicator -->
-        <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-            @if (!isGameOver()) {
-            <div class="px-6 py-2 rounded-full text-lg font-semibold transition-all duration-300" [class]="isPlayerTurn() ? 'bg-blue-600/80 shadow-lg' : 'bg-red-800/80'">
-                @if (isPlayerTurn()) {
-                <span>Sıra Sende!</span>
-                } @else {
-                <span>Rakip Düşünüyor...</span>
-                }
-            </div>
-            }
-        </div>
-
-        <!-- Fighters Area -->
-        <div class="relative flex-grow flex justify-center items-end">
-            <div class="absolute bottom-0 w-full flex justify-between items-end px-16">
-                <!-- Player -->
-                <div class="flex flex-col items-center">
-                    <div class="flex flex-col-reverse items-center mb-2">
-                         <div class="relative">
-                            @if(playerEffectInfo(); as effect) {
-                                @if (effect.type === 'damage') {
-                                <span class="absolute -top-8 left-1/2 -translate-x-1/2 text-5xl font-black text-red-500 animate-damage-popup drop-shadow-lg z-20">
-                                    -{{ effect.value }}
-                                </span>
-                                } @else if (effect.type === 'heal') {
-                                <span class="absolute -top-8 left-1/2 -translate-x-1/2 text-5xl font-black text-green-400 animate-damage-popup drop-shadow-lg z-20">
-                                    +{{ effect.value }}
-                                </span>
-                                }
-                            }
-                            <div class="w-40 h-40 rounded-full bg-blue-900 border-4 border-blue-400 flex items-center justify-center shadow-2xl" [class.animate-player-attack]="playerAnimation() === 'attacking'" [class.animate-hit]="playerAnimation() === 'hit'">
-                                <div class="w-16 h-16 bg-blue-300 rounded-full"></div>
-                            </div>
-                        </div>
-                        <div class="w-full max-w-sm mb-2">
-                             <h2 class="text-xl font-bold text-center mb-1 drop-shadow-lg">Oyuncu (Seviye {{ playerStats().level }})</h2>
-                            <div class="w-full bg-black/50 rounded-full h-6 p-1 border-2 border-gray-600">
-                                <div [style.width.%]="(playerHealth() / maxHealth()) * 100" class="h-full rounded-full transition-all duration-500" [class]="getHealthBarColor(playerHealth(), maxHealth())"></div>
-                            </div>
-                            <p class="text-center font-mono text-md mt-1">{{ playerHealth() }} / {{ maxHealth() }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Opponents -->
-                <div class="flex justify-center items-end gap-x-4">
-                    @for(opponent of opponents(); track opponent.id) {
-                    <div class="flex flex-col-reverse items-center mb-2">
-                        <div class="relative">
-                            @if(opponent.effectInfo; as effect) {
-                                @if (effect.type === 'damage') {
-                                <span class="absolute -top-8 left-1/2 -translate-x-1/2 text-4xl font-black text-yellow-300 animate-damage-popup drop-shadow-lg z-20">
-                                    -{{ effect.value }}
-                                </span>
-                                }
-                            }
-                            <div class="w-32 h-32 rounded-full bg-green-900 border-4 border-green-500 flex items-center justify-center shadow-2xl" [class.animate-opponent-attack]="opponent.animation === 'attacking'" [class.animate-hit]="opponent.animation === 'hit'">
-                                <div class="w-12 h-12 bg-green-300 rounded-full"></div>
-                            </div>
-                        </div>
-                         <div class="w-full max-w-xs mb-2">
-                            <h2 class="text-lg font-bold text-center mb-1 drop-shadow-lg">Goblin</h2>
-                            <div class="w-full bg-black/50 rounded-full h-5 p-1 border-2 border-gray-600">
-                                <div [style.width.%]="(opponent.health / opponent.maxHealth) * 100" class="h-full rounded-full transition-all duration-500" [class]="getHealthBarColor(opponent.health, opponent.maxHealth)"></div>
-                            </div>
-                        </div>
-                    </div>
+            @if (battleRewards(); as rewards) {
+              <div class="mt-8 text-2xl space-y-2">
+                <p>
+                  Tecrübe Puanı:
+                  <span class="font-bold text-blue-400">{{ rewards.xp }}</span>
+                </p>
+                <p>
+                  Altın:
+                  <span class="font-bold text-yellow-400">{{ rewards.gold }}</span>
+                </p>
+                @if (rewards.loot.length > 0) {
+                  <p>
+                    Ganimet:
+                    @for (item of rewards.loot; track item.id) {
+                      <span class="font-bold text-purple-400">
+                        {{ item.icon }}{{ item.name }}
+                      </span>
                     }
-                </div>
-            </div>
+                  </p>
+                }
+              </div>
+            }
+          </div>
+        } @else {
+          <h1
+            class="text-8xl font-black text-red-600 drop-shadow-[0_5px_5px_rgba(220,38,38,0.5)]"
+          >
+            MAĞLUBİYET
+          </h1>
+        }
+        <p class="mt-4 text-xl text-gray-300">Haritaya dönülüyor...</p>
+      </div>
+    }
+
+    <!-- Turn Indicator -->
+    <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+      @if (!isGameOver()) {
+        <div
+          class="px-6 py-2 rounded-full text-lg font-semibold transition-all duration-300"
+          [class]="
+            isPlayerTurn()
+              ? 'bg-blue-600/80 shadow-lg'
+              : 'bg-red-800/80'
+          "
+        >
+          @if (isPlayerTurn()) {
+            <span>Sıra Sende!</span>
+          } @else {
+            <span>Rakip Düşünüyor...</span>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- BOSS MODE: büyük HP bar (Turn indicator'in altında, fighters'tan önce) -->
+    @if (isBossFight && bossOpponent()) {
+      <div
+        class="relative z-10 mt-16 mb-2 px-6 py-2 rounded-lg bg-gradient-to-r from-red-900 via-purple-900 to-red-900 border border-red-500 shadow-lg"
+      >
+        <div class="flex justify-between items-center mb-1">
+          <span
+            class="text-sm font-semibold text-red-200 tracking-widest uppercase"
+          >
+            Boss Encounter
+          </span>
+          <span class="text-base font-bold text-red-100">
+            {{ bossOpponent()?.name }}
+          </span>
         </div>
 
-        <!-- Skills Bar -->
-        <div class="relative w-full h-32 bg-black/70 border-t-4 border-indigo-500 rounded-b-xl flex justify-center items-center gap-x-4 p-2">
-            @for(skill of skills(); track skill.name) {
-            <div class="relative">
-                <button (click)="playerAttack(skill)" [disabled]="!isPlayerTurn() || isGameOver() || skillCooldowns()[skill.name] > 0" class="w-24 h-24 rounded-lg flex flex-col justify-center items-center text-white font-bold transition-all duration-200 transform hover:-translate-y-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none shadow-lg" [class]="skill.color">
-                    <span class="text-3xl">{{ skill.icon }}</span>
-                    <span class="mt-1 text-sm">{{ skill.name }}</span>
-                </button>
-                @if(skillCooldowns()[skill.name] > 0) {
-                    <div class="absolute inset-0 bg-black/70 flex justify-center items-center font-black text-4xl rounded-lg pointer-events-none">
-                        {{ skillCooldowns()[skill.name] }}
-                    </div>
-                }
-            </div>
-            }
+        <div
+          class="w-full h-4 bg-black/40 rounded-full overflow-hidden border border-red-700"
+        >
+          <div
+            class="h-full bg-gradient-to-r from-red-600 via-red-400 to-yellow-400 transition-all duration-300"
+            [style.width.%]="
+              (bossOpponent()?.health ?? 0) /
+              (bossOpponent()?.maxHealth ?? 1) *
+              100
+            "
+          ></div>
         </div>
+
+        <div class="text-xs text-red-200/80 mt-1 text-right">
+          {{ bossOpponent()?.health }} / {{ bossOpponent()?.maxHealth }} HP
+        </div>
+      </div>
+    }
+
+    <!-- Fighters Area -->
+    <div class="relative flex-grow flex justify-center items-end mt-4">
+      <div
+        class="absolute bottom-0 w-full flex justify-between items-end px-16"
+      >
+        <!-- Player -->
+        <div class="flex flex-col items-center">
+          <div class="flex flex-col-reverse items-center mb-2">
+            <div class="relative">
+              @if (playerEffectInfo(); as effect) {
+                @if (effect.type === 'damage') {
+                  <span
+                    class="absolute -top-8 left-1/2 -translate-x-1/2 text-5xl font-black text-red-500 animate-damage-popup drop-shadow-lg z-20"
+                  >
+                    -{{ effect.value }}
+                  </span>
+                } @else if (effect.type === 'heal') {
+                  <span
+                    class="absolute -top-8 left-1/2 -translate-x-1/2 text-5xl font-black text-green-400 animate-damage-popup drop-shadow-lg z-20"
+                  >
+                    +{{ effect.value }}
+                  </span>
+                }
+              }
+              <div
+                class="w-40 h-40 rounded-full bg-blue-900 border-4 border-blue-400 flex items-center justify-center shadow-2xl"
+                [class.animate-player-attack]="playerAnimation() === 'attacking'"
+                [class.animate-hit]="playerAnimation() === 'hit'"
+              >
+                <div class="w-16 h-16 bg-blue-300 rounded-full"></div>
+              </div>
+            </div>
+            <div class="w-full max-w-sm mb-2">
+              <h2
+                class="text-xl font-bold text-center mb-1 drop-shadow-lg"
+              >
+                Oyuncu (Seviye {{ playerStats().level }})
+              </h2>
+              <div
+                class="w-full bg-black/50 rounded-full h-6 p-1 border-2 border-gray-600"
+              >
+                <div
+                  [style.width.%]="(playerHealth() / maxHealth()) * 100"
+                  class="h-full rounded-full transition-all duration-500"
+                  [class]="getHealthBarColor(playerHealth(), maxHealth())"
+                ></div>
+              </div>
+              <p class="text-center font-mono text-md mt-1">
+                {{ playerHealth() }} / {{ maxHealth() }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Opponents -->
+        <div class="flex justify-center items-end gap-x-4">
+          @for (opponent of opponents(); track opponent.id) {
+            <div class="flex flex-col-reverse items-center mb-2">
+              <div class="relative">
+                @if (opponent.effectInfo; as effect) {
+                  @if (effect.type === 'damage') {
+                    <span
+                      class="absolute -top-8 left-1/2 -translate-x-1/2 text-4xl font-black text-yellow-300 animate-damage-popup drop-shadow-lg z-20"
+                    >
+                      -{{ effect.value }}
+                    </span>
+                  }
+                }
+
+                <!-- Boss için daha büyük ve daha parlak avatar -->
+                <div
+                  class="rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300"
+                  [ngClass]="
+                    opponent.isBoss
+                      ? 'w-40 h-40 bg-gradient-to-br from-red-700 via-purple-700 to-yellow-500 border-4 border-red-300 scale-110 shadow-[0_0_25px_rgba(248,113,113,0.8)]'
+                      : 'w-32 h-32 bg-green-900 border-4 border-green-500'
+                  "
+                  [class.animate-opponent-attack]="opponent.animation === 'attacking'"
+                  [class.animate-hit]="opponent.animation === 'hit'"
+                >
+                  <div
+                    class="rounded-full"
+                    [ngClass]="
+                      opponent.isBoss
+                        ? 'w-16 h-16 bg-red-300'
+                        : 'w-12 h-12 bg-green-300'
+                    "
+                  ></div>
+                </div>
+              </div>
+
+              <div class="w-full max-w-xs mb-2">
+                <h2
+                  class="text-lg font-bold text-center mb-1 drop-shadow-lg"
+                  [ngClass]="opponent.isBoss ? 'text-red-300' : 'text-white'"
+                >
+                  {{ opponent.name }}
+                </h2>
+
+                <!-- Mini HP bar: boss savaşında boss için gizle -->
+                @if (!isBossFight || !opponent.isBoss) {
+                  <div
+                    class="w-full bg-black/50 rounded-full h-5 p-1 border-2 border-gray-600"
+                  >
+                    <div
+                      [style.width.%]="
+                        (opponent.health / opponent.maxHealth) * 100
+                      "
+                      class="h-full rounded-full transition-all duration-500"
+                      [class]="
+                        getHealthBarColor(opponent.health, opponent.maxHealth)
+                      "
+                    ></div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
     </div>
+
+    <!-- Skills Bar -->
+    <div
+      class="relative w-full h-32 bg-black/70 border-t-4 border-indigo-500 rounded-b-xl flex justify-center items-center gap-x-4 p-2"
+    >
+      @for (skill of skills(); track skill.name) {
+        <div class="relative">
+          <button
+            (click)="playerAttack(skill)"
+            [disabled]="
+              !isPlayerTurn() || isGameOver() || skillCooldowns()[skill.name] > 0
+            "
+            class="w-24 h-24 rounded-lg flex flex-col justify-center items-center text-white font-bold transition-all duration-200 transform hover:-translate-y-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+            [class]="skill.color"
+          >
+            <span class="text-3xl">{{ skill.icon }}</span>
+            <span class="mt-1 text-sm">{{ skill.name }}</span>
+          </button>
+          @if (skillCooldowns()[skill.name] > 0) {
+            <div
+              class="absolute inset-0 bg-black/70 flex justify-center items-center font-black text-4xl rounded-lg pointer-events-none"
+            >
+              {{ skillCooldowns()[skill.name] }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
 </div>

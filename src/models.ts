@@ -20,6 +20,7 @@ export interface Opponent {
   maxHealth: number;
   animation: AnimationState;
   effectInfo: EffectInfo | null;
+  isBoss?: boolean;
 }
 
 export type GameStatus = 'playing' | 'victory' | 'defeat';
@@ -44,16 +45,20 @@ export interface Item {
   slot: EquipmentSlot;
   stats: StatBonus;
   icon: string;
+  rarity?: 'common' | 'rare' | 'epic';
 }
 
 export interface MapEnemy {
   id: number;
+  name: string;
+  maxHealth: number;
   position: Position;
   type: 'goblin';
   opponentCount: number;
   xpYield: number;
   goldYield: number;
   loot?: Item[];
+  isBoss?: boolean;
 }
 
 export interface BattleStartEvent {

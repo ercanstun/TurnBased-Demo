@@ -107,12 +107,29 @@
             <div class="flex-grow">
                  <h3 class="text-2xl font-bold mb-4">Envanter</h3>
                  <div class="h-full max-h-[260px] bg-gray-900/70 rounded-lg border-2 border-gray-700 p-4 overflow-y-auto grid grid-cols-5 gap-4">
-                    @for(item of inventory(); track item.id) {
-                        <div (click)="equipItem.emit(item)" class="w-20 h-20 bg-gray-700 rounded-lg flex flex-col items-center justify-center p-1 cursor-pointer hover:bg-gray-600 hover:border-yellow-400 border-2 border-transparent transition-colors">
-                            <span class="text-3xl">{{ item.icon }}</span>
-                            <span class="text-xs text-center leading-tight">{{ item.name }}</span>
+                    @for (item of inventory(); track item.id) {
+                    <div
+                        class="bg-slate-800 rounded-lg p-2 border-2 transition-transform duration-200 hover:-translate-y-0.5"
+                        [ngClass]="{
+                        'border-slate-500': !item.rarity || item.rarity === 'common',
+                        'border-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.6)]': item.rarity === 'rare',
+                        'border-purple-400 shadow-[0_0_12px_rgba(192,132,252,0.8)]': item.rarity === 'epic'
+                        }"
+                    >
+                        <div class="text-xs uppercase tracking-wider mb-1"
+                            [ngClass]="{
+                            'text-slate-300': !item.rarity || item.rarity === 'common',
+                            'text-blue-300': item.rarity === 'rare',
+                            'text-purple-300': item.rarity === 'epic'
+                            }">
+                        {{ item.rarity ? item.rarity : 'common' }}
                         </div>
+                        <div class="font-semibold text-sm text-slate-100">
+                        {{ item.name }}
+                        </div>
+                    </div>
                     }
+
                     @if(inventory().length === 0) {
                         <p class="col-span-5 text-center text-gray-500 mt-8">Envanterin boş.</p>
                     }

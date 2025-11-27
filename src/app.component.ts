@@ -16,7 +16,10 @@ import { MapEnemy, Opponent, Position, BattleStartEvent, PlayerStats, BattleRewa
 export class AppComponent {
   scene = signal<'classSelection' | 'exploration' | 'combat'>('classSelection');
   isInventoryOpen = signal(false);
-  
+
+  // Şu an engage ettiğimiz düşman (boss mu değil mi buradan anlayacağız)
+  currentEnemy = signal<MapEnemy | null>(null);
+
   private getInitialStatsByClass(playerClass: PlayerClass): Omit<PlayerStats, 'level' | 'xp' | 'xpToNextLevel' | 'currentHealth' | 'unallocatedStatPoints' | 'skillPoints'> {
     switch (playerClass) {
       case 'warrior':
@@ -81,10 +84,21 @@ export class AppComponent {
   private lastPlayerMapPosition: Position = this.playerStartPosition;
   
   mapEnemies = signal<MapEnemy[]>([
-    { id: 1, position: { x: 250, y: 100 }, type: 'goblin', opponentCount: 1, xpYield: 25, goldYield: 10, loot: [{ id: 301, name: "Eski Miğfer", slot: 'helmet', stats: { vit: 1 }, icon: '🪖' }] },
-    { id: 2, position: { x: 400, y: 400 }, type: 'goblin', opponentCount: 2, xpYield: 50, goldYield: 25 },
-    { id: 3, position: { x: 100, y: 300 }, type: 'goblin', opponentCount: 3, xpYield: 80, goldYield: 40, loot: [{ id: 102, name: "Keskin Hançer", slot: 'weapon', stats: { str: 4 }, icon: '🗡️' }] },
-    { id: 4, position: { x: 600, y: 200 }, type: 'goblin', opponentCount: 2, xpYield: 55, goldYield: 30 },
+    { id: 1, name: 'Goblin', maxHealth: 30, position: { x: 250, y: 100 }, type: 'goblin', opponentCount: 1, xpYield: 25, goldYield: 10, loot: [{ id: 101, name: "Eski Miğfer", slot: 'helmet', stats: { vit: 1 }, icon: '🪖' }] },
+    { id: 2, name: 'Goblin', maxHealth: 30, position: { x: 400, y: 400 }, type: 'goblin', opponentCount: 2, xpYield: 50, goldYield: 25 },
+    { id: 3, name: 'Goblin', maxHealth: 30, position: { x: 100, y: 300 }, type: 'goblin', opponentCount: 3, xpYield: 80, goldYield: 40, loot: [{ id: 102, name: "Keskin Hançer", slot: 'weapon', stats: { str: 4 }, icon: '🗡️' }] },
+    {
+      id: 4,
+      name: 'Ancient Warlord',
+      maxHealth: 130,
+      xpYield: 100,
+      goldYield: 250,
+      type: 'goblin',
+      position: { x: 600, y: 200 },
+      opponentCount: 1,
+      isBoss: true, // <<< boss
+      loot: [{ id: 103, name: "Mysterious Epic Weapon", slot: 'weapon', stats: { str: 4 }, icon: '🗡️', rarity: 'epic' }]
+    }
   ]);
 
   // --- Battle State ---
@@ -108,36 +122,105 @@ export class AppComponent {
   }
 
   onBattleStarted(event: BattleStartEvent) {
-    this.currentBattleEnemyId = event.enemy.id;
-    this.lastPlayerMapPosition = event.playerPosition;
-    this.battleRewards.set({ xp: event.enemy.xpYield, gold: event.enemy.goldYield, loot: event.enemy.loot ?? [] });
-    
-    const opponentsForBattle: Opponent[] = [];
-    for (let i = 0; i < event.enemy.opponentCount; i++) {
-        const health = 50;
-        opponentsForBattle.push({
-            id: i,
-            health: health,
-            maxHealth: health,
-            animation: 'idle',
-            effectInfo: null
-        });
+    // Haritadaki enemy kaydını bul
+    const enemy = this.mapEnemies().find(e => e.id === event.enemy.id);
+    this.currentEnemy.set(enemy ?? null);
+
+    // Opponent listesini hazırla (sende zaten buna benzer bir kısım var)
+    const opponents: Opponent[] = Array.from(
+      { length: event.enemy.opponentCount ?? 1 }
+    ).map((_, index) => {
+      const isBoss = !!enemy?.isBoss && index === 0;
+      const maxHp = isBoss ? 120 : 40; // boss için daha yüksek HP
+
+      return {
+        id: event.enemy.id * 10 + index,
+
+        name: index === 0 ? event.enemy.name : `${event.enemy.name} Minion`,
+
+        maxHealth: maxHp,
+        health: maxHp,
+        animation: 'idle',
+        effectInfo: [],
+        isBoss
+      };
+    });
+
+
+
+    this.battleOpponents.set(opponents);
+
+    // Temel ödüller
+    const baseRewards = {
+      xp: event.enemy.xpYield,
+      gold: event.enemy.goldYield,
+      loot: event.enemy.loot ?? []
+    };
+
+    // Boss ise class'a göre EPIC silah ekle
+    const isBossFight = enemy?.isBoss === true;
+
+    let bossLoot: Item[] = [];
+
+    if (isBossFight) {
+      const playerClass: 'warrior' | 'mage' | 'ranger' = 'warrior'; // TODO: ileride class seçme ekranından gelsin
+
+      let epicWeapon: Item;
+
+      if (playerClass === 'warrior') {
+        epicWeapon = {
+          id: 104,
+          name: 'Blade of the Ancients',
+          slot: 'weapon',
+          rarity: 'epic',
+          icon: '🗡️' ,
+          stats: { str: 3, vit: 1 },
+        };
+      } else if (playerClass === 'mage') {
+        epicWeapon = {
+          id: 105,
+          name: 'Staff of Fallen Stars',
+          slot: 'weapon',
+          rarity: 'epic',
+          icon: '🗡️' ,
+          stats: { int: 4 },
+        };
+      } else {
+        epicWeapon = {
+          id: 106,
+          name: 'Eaglefang Longbow',
+          slot: 'weapon',
+          rarity: 'epic',
+          icon: '🗡️' ,
+          stats: { str: 4 },
+        };
+      }
+
+      bossLoot = [epicWeapon];
     }
 
-    this.battleOpponents.set(opponentsForBattle);
+    this.battleRewards.set({
+      xp: baseRewards.xp,
+      gold: baseRewards.gold,
+      loot: [...(baseRewards.loot ?? []), ...bossLoot]
+    });
+
     this.scene.set('combat');
   }
 
+
   onBattleEnded(event: BattleResult) {
+    const enemy = this.currentEnemy();
     if (!this.playerStats()) return;
 
     if (event.result === 'victory' && this.battleRewards()) {
+      const defeatedId = enemy.id;
       const rewards = this.battleRewards()!;
       this.playerGold.update(g => g + rewards.gold);
       this.playerInventory.update(inv => [...inv, ...rewards.loot]);
-      this.mapEnemies.update(enemies => enemies.filter(e => e.id !== this.currentBattleEnemyId));
+      this.mapEnemies.update(enemies => enemies.filter(e => e.id !== defeatedId));
       this.playerMapPosition.set(this.lastPlayerMapPosition);
-      
+      this.currentEnemy.set(null);
       this.playerStats.update(stats => {
         if (!stats) return null;
         let updatedStats: PlayerStats = { ...stats, xp: stats.xp + rewards.xp, currentHealth: event.finalPlayerHealth };

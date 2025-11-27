@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, computed, input, output, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed, input, output, effect, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Skill, Opponent, GameStatus, AnimationState, EffectInfo, PlayerStats, BattleRewards, BattleResult } from './models';
 
@@ -9,7 +9,10 @@ import { Skill, Opponent, GameStatus, AnimationState, EffectInfo, PlayerStats, B
   templateUrl: './battle.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
+
 export class BattleComponent {
+  @Input({ required: false }) isBossFight = false;
+
   initialOpponents = input.required<Opponent[]>();
   playerStats = input.required<PlayerStats & {maxHealth: number}>(); // Now receives effective stats
   battleRewards = input.required<BattleRewards | null>();
@@ -19,6 +22,12 @@ export class BattleComponent {
   playerHealth = signal(100);
   
   opponents = signal<Opponent[]>([]);
+  // Boss savaşlarında ana boss'u bulmak için
+  bossOpponent = computed(() => {
+    if (!this.isBossFight) return null;
+    return this.opponents().find(o => o.isBoss) ?? null;
+  });
+
   gameStatus = signal<GameStatus>('playing');
   isPlayerTurn = signal(true);
   
